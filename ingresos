@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas 2026 - Mi Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .ingreso { color: #10b981; }
+        .egreso { color: #ef4444; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen">
+
+    <div class="max-w-4xl mx-auto p-6">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">📊 Mis Finanzas 2026</h1>
+            <p class="text-slate-500 font-medium">Primer año de libertad financiera</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
+                <p class="text-sm text-slate-500 uppercase font-bold">Ingresos</p>
+                <p id="totalIngresos" class="text-2xl font-bold ingreso">$0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
+                <p class="text-sm text-slate-500 uppercase font-bold">Egresos</p>
+                <p id="totalEgresos" class="text-2xl font-bold egreso">$0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-sm text-slate-500 uppercase font-bold">Balance Neto</p>
+                <p id="balanceNeto" class="text-2xl font-bold text-slate-800">$0.00</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <h2 class="text-lg font-bold mb-4 text-slate-700">Registrar Nuevo Movimiento</h2>
+            <form id="finanzasForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" id="desc" placeholder="Descripción (ej. Sueldo, Cena)" class="p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" required>
+                <input type="number" id="monto" placeholder="Monto ($)" step="0.01" class="p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" required>
+                <select id="tipo" class="p-2 border rounded-lg bg-white outline-none">
+                    <option value="ingreso">Ingreso (+)</option>
+                    <option value="egreso">Egreso (-)</option>
+                </select>
+                <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Añadir</button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-slate-100 border-b">
+                    <tr>
+                        <th class="p-4 font-bold text-slate-600">Descripción</th>
+                        <th class="p-4 font-bold text-slate-600">Tipo</th>
+                        <th class="p-4 font-bold text-slate-600 text-right">Monto</th>
+                    </tr>
+                </thead>
+                <tbody id="listaMovimientos">
+                    </tbody>
+            </table>
+        </div>
+        
+        <button onclick="borrarTodo()" class="mt-4 text-xs text-red-400 hover:text-red-600 underline">Borrar todos los datos del 2026</button>
+    </div>
+
+    <script>
+        let movimientos = JSON.parse(localStorage.getItem('finanzas2026')) || [];
+
+        const form = document.getElementById('finanzasForm');
+        const lista = document.getElementById('listaMovimientos');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mov = {
+                id: Date.now(),
+                desc: document.getElementById('desc').value,
+                monto: parseFloat(document.getElementById('monto').value),
+                tipo: document.getElementById('tipo').value
+            };
+            movimientos.push(mov);
+            actualizarUI();
+            form.reset();
+        });
+
+        function actualizarUI() {
+            localStorage.setItem('finanzas2026', JSON.stringify(movimientos));
+            lista.innerHTML = '';
+            
+            let ingresos = 0;
+            let egresos = 0;
+
+            movimientos.forEach(m => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-slate-50 transition';
+                row.innerHTML = `
+                    <td class="p-4 text-slate-700">${m.desc}</td>
+                    <td class="p-4 capitalize text-sm text-slate-500">${m.tipo}</td>
+                    <td class="p-4 text-right font-mono ${m.tipo === 'ingreso' ? 'ingreso' : 'egreso'}">
+                        ${m.tipo === 'ingreso' ? '+' : '-'}$${m.monto.toFixed(2)}
+                    </td>
+                `;
+                lista.appendChild(row);
+
+                if (m.tipo === 'ingreso') ingresos += m.monto;
+                else egresos += m.monto;
+            });
+
+            document.getElementById('totalIngresos').innerText = `$${ingresos.toFixed(2)}`;
+            document.getElementById('totalEgresos').innerText = `$${egresos.toFixed(2)}`;
+            const balance = ingresos - egresos;
+            const balanceEl = document.getElementById('balanceNeto');
+            balanceEl.innerText = `$${balance.toFixed(2)}`;
+            balanceEl.className = `text-2xl font-bold ${balance >= 0 ? 'text-slate-800' : 'egreso'}`;
+        }
+
+        function borrarTodo() {
+            if(confirm('¿Estás seguro de borrar todo el historial?')) {
+                movimientos = [];
+                actualizarUI();
+            }
+        }
+
+        actualizarUI();
+    </script>
+</body>
+</html>
